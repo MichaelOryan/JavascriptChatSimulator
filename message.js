@@ -22,7 +22,7 @@ MessageText.prototype.isNewSpeaker = function(currentMessage, contentIndex, allM
         LastSpeaker = allMessages[messageIndex]["Name"]; 
     }
 
-    return currentMessage["Name"] !== LastSpeaker || contentIndex == 0;
+    return currentMessage["Name"] != LastSpeaker || (this.NewDivForEachMessage && contentIndex == 0);
 
 }
 
@@ -47,11 +47,18 @@ MessageText.prototype.appendMessage = function(currentMessage, targetDiv, conten
 
 }
 
-MessageText.prototype.onNewSpeakerNewDiv = function(container, currentMessage, contentIndex, allMessages, messageIndex) {
+MessageText.prototype.onNewSpeakerNewDiv = function(Messages){
+    var container = Messages.container;
+    var currentMessage = Messages.currentMessage;
+    var contentIndex = Messages.contentIndex;
+    var allMessages = Messages.allMessages;
+    var messageIndex = Messages.messageIndex;
+    var target = Messages.targetDiv;
 
     if(this.isNewSpeaker(currentMessage, contentIndex, allMessages, messageIndex)) {
         target = this.newMessageDiv(container, currentMessage, messageIndex);
     }
+
     return target;
 
 }
@@ -76,11 +83,10 @@ MessageText.prototype.CharacterDelay = function () {
 //MessageText.prototype.showText = function (container, targetDiv, currentMessage, contentIndex, interval, allMessages, messageIndex) {
 MessageText.prototype.showText = function (Messages) {
     var that = this;
-
     this.removeTopOverflow(Messages.container, Messages.messageIndex);
     
     if (Messages.contentIndex < Messages.currentMessage["Content"].length) {
-        Messages.targetDiv = this.onNewSpeakerNewDiv(Messages.container, Messages.currentMessage, Messages.contentIndex, Messages.allMessages, Messages.messageIndex);
+        Messages.targetDiv = this.onNewSpeakerNewDiv(Messages);
         
         Messages.contentIndex = this.appendMessage(Messages.currentMessage, Messages.targetDiv, Messages.contentIndex);
         
@@ -94,6 +100,8 @@ MessageText.prototype.showText = function (Messages) {
         Messages.contentIndex = 0;
         setTimeout(function () { that.showText(Messages); }, this.MessageDelay());
         
+    } else {
+        Messages.callback();
     }
 }
 
@@ -189,6 +197,7 @@ function MessageText(Options) {
     this.MessageInterval = this.ValueOrDefault(Options, "CharacterInterval", this.CharacterInterval * 50);
     this.RandomizeCharacterInterval = this.ValueOrDefault(Options, "RandomizeCharacterInterval", true);
     this.RandomizeMessageInterval = this.ValueOrDefault(Options, "RandomizeMessageInterval", true);
+    this.NewDivForEachMessage = this.ValueOrDefault(Options, "NewDivForEachMessage", true);
 }
 
 MessageText.prototype.hasScrollBar = function(target) {
@@ -207,14 +216,15 @@ MessageText.prototype.addMessage = function(name, message, type) {
     this.Messages.push(this.createMessageObject(name, message, type));
 }
 
-MessageText.prototype.start = function() {
+MessageText.prototype.start = function(callback) {
     var Messages = {
         container: this.Target,
         targetDiv: 0,
         currentMessage: this.Messages[0],
         contentIndex: 0,
         allMessages: this.Messages,
-        messageIndex: 0
+        messageIndex: 0,
+        callback: callback
     };
     this.showText(Messages);
 }
