@@ -33,8 +33,8 @@ MessageText.prototype.start = function(callback) {
 // To append a message to be sent
 // Proper way of populating messages in class. Other ways may not be future supported
 // In future may store messages differently
-MessageText.prototype.addMessage = function(name, message, type, intervalOptions) {
-    this.Messages.push(this.createMessageObject(name, message, type, intervalOptions));
+MessageText.prototype.addMessage = function(name, message, type, options) {
+    this.Messages.push(this.createMessageObject(name, message, type, options));
 }
 
 MessageText.prototype.popMessages = function() {
@@ -79,10 +79,10 @@ MessageText.prototype.replaceMessages = function(messages) {
     this.Messages = messages
 }
 
-MessageText.prototype.newSpeaker = function(target, name) {
+MessageText.prototype.newSpeaker = function(target, name, portraitClasses, speakerClasses) {
     
-    var content = this.makePortraitTag(name) + name;
-    var tag = this.makeSpeakerTag(content);
+    var content = this.makePortraitTag(name, portraitClasses) + name;
+    var tag = this.makeSpeakerTag(content, speakerClasses);
     
     $(target).append(tag);
     $(target).append("<p/>");
@@ -125,11 +125,15 @@ MessageText.prototype.newMessageDiv = function(Messages) {
     var currentMessage = Messages.currentMessage;
     var messageIndex = Messages.messageIndex;
     var id = this.makeID(messageIndex);
-    console.log(id);
-    var tag = this.makeMessageDivTag(id);
+    var divClasses = currentMessage.DivClasses;
+    var portraitClasses = currentMessage.PortraitClasses;
+    var speakerClasses = currentMessage.SpeakerClasses;
+    
+    var tag = this.makeMessageDivTag(id, divClasses);
+
     $(container).append(tag);
     targetDiv = "#" + id;
-    this.newSpeaker(targetDiv, Messages.currentMessage["Name"]);
+    this.newSpeaker(targetDiv, Messages.currentMessage["Name"], portraitClasses, speakerClasses);
     return targetDiv;
 }
 
@@ -138,13 +142,15 @@ MessageText.prototype.appendMessage = function(Messages) {
     var currentMessage = Messages.currentMessage;
     var targetDiv = Messages.targetDiv;
     var contentIndex = Messages.contentIndex;
+    var imageClasses = currentMessage.ImageClasses;
+    var divClasses = currentMessage.DivClasses;
     
     if(currentMessage["Type"] == this.Type.Text){
         $(targetDiv).append(currentMessage["Content"][contentIndex]);
         contentIndex++;
     }
     else if (currentMessage["Type"] == this.Type.Image) {
-        $(targetDiv).append(this.makeImageTag(currentMessage["Content"]));
+        $(targetDiv).append(this.makeImageTag(currentMessage["Content"], imageClasses));
         contentIndex = currentMessage["Content"].length;
     }
     return contentIndex;
@@ -257,25 +263,25 @@ MessageText.prototype.MakeSingleTag = function (TagName, Attributes) {
 }
 
 
-MessageText.prototype.makeImageTag = function(source) {
+MessageText.prototype.makeImageTag = function(source, classes) {
     var Attributes = {
-        class: this.toString(this.ImageClasses),
+        class: this.toString(this.ImageClasses.concat(classes)),
         src: source
     }
     return this.MakeSingleTag("img", Attributes);
 }
 
-MessageText.prototype.makePortraitTag = function(name) {
+MessageText.prototype.makePortraitTag = function(name, classes) {
     var Attributes = {
-        class: this.toString(this.PortraitClasses),
+        class: this.toString(this.PortraitClasses.concat(classes)),
         src: this.Portraits[name]
     }
     return this.MakeSingleTag("img", Attributes);
 }
 
-MessageText.prototype.makeSpeakerTag = function(content) {
+MessageText.prototype.makeSpeakerTag = function(content, classes) {
     var Attributes = {
-        class: this.toString(this.SpeakerClasses) || ""
+        class: this.toString(this.SpeakerClasses.concat(classes)) || ""
     }
     var tag = this.MakeOpeningTag("span", Attributes);
     tag += content;
@@ -283,9 +289,9 @@ MessageText.prototype.makeSpeakerTag = function(content) {
     return tag;
 }
 
-MessageText.prototype.makeMessageDivTag = function(id) {
+MessageText.prototype.makeMessageDivTag = function(id, classes) {
     var Attributes = {
-        class: this.toString(this.MessageDivClasses) || "",
+        class: this.toString(this.MessageDivClasses.concat(classes)) || "",
         id: id || ""
     }
     var tag = this.MakeOpeningTag("div", Attributes);
@@ -314,18 +320,22 @@ function hasScroll(target) {
     return $(target).prop('scrollHeight') > $(target).prop('clientHeight');
 }
 
-MessageText.prototype.createMessageObject = function(name, content, type, intervalOptions) {
-    intervalOptions = intervalOptions || {};
+MessageText.prototype.createMessageObject = function(name, content, type, options) {
+    options = options || {};
     return {
         Name: name || "",
         Content: content || "",
         Type: type || this.Type.Text,
-        StartCallback: valueOrDefault(intervalOptions, "StartCallback", this.emptyFunction),
-        FinishCallback: valueOrDefault(intervalOptions, "FinishCallback", this.emptyFunction),
-        CharacterInterval: valueOrDefault(intervalOptions, "CharacterInterval", this.getCharacterInterval()),
-        RandomizeCharacterIntervalOn: valueOrDefault(intervalOptions, "RandomizeCharacterIntervalOn", this.isRandomizeCharacterIntervalOn()),
-        MessageInterval: valueOrDefault(intervalOptions, "MessageInterval", this.getMessageInterval()),
-        RandomizeMessageInterval: valueOrDefault(intervalOptions, "RandomizeMessageIntervalOn", this.isRandomizeMessageIntervalOn())
+        StartCallback: valueOrDefault(options, "StartCallback", this.emptyFunction),
+        FinishCallback: valueOrDefault(options, "FinishCallback", this.emptyFunction),
+        CharacterInterval: valueOrDefault(options, "CharacterInterval", this.getCharacterInterval()),
+        RandomizeCharacterIntervalOn: valueOrDefault(options, "RandomizeCharacterIntervalOn", this.isRandomizeCharacterIntervalOn()),
+        MessageInterval: valueOrDefault(options, "MessageInterval", this.getMessageInterval()),
+        RandomizeMessageInterval: valueOrDefault(options, "RandomizeMessageIntervalOn", this.isRandomizeMessageIntervalOn()),
+        DivClasses: valueOrDefault(options, "DivClasses", []),
+        ImageClasses: valueOrDefault(options, "ImageClasses", []),
+        PortraitClasses: valueOrDefault(options, "PortraitClasses", []),
+        NameClasses: valueOrDefault(options, "NameClasses", [])
     };
 }
 
