@@ -150,6 +150,27 @@ MessageText.prototype.appendMessage = function(Messages) {
     return contentIndex;
 }
 
+MessageText.doStartCallback = function(Messages) {
+    var message = Messages.currentMessage;
+    var target = Messages.targetDiv;
+    message.StartCallback({
+        target: target,
+        message: Object.assign({}, message)
+    });
+}
+
+MessageText.doFinishCallback = function(Messages) {
+    var messageIndex = Messages.messageIndex;
+    if(messageIndex > 0) {
+        var lastMessage = Messages.allMessages[messageIndex - 1];
+        lastMessage.StartCallback({
+            target: Messages.targetDiv,
+            message: Object.assign({}, lastMessage)
+        });
+    }
+}
+
+
 MessageText.prototype.onNewSpeakerNewDiv = function(Messages){
     var container = Messages.container;
     var currentMessage = Messages.currentMessage;
@@ -159,7 +180,9 @@ MessageText.prototype.onNewSpeakerNewDiv = function(Messages){
     var target = Messages.targetDiv;
 
     if(this.isnewSpeaker(Messages)) {
+        doFinishCallback(Messages);
         target = this.newMessageDiv(Messages);
+        doStartCallback(Messages);
     }
 
     return target;
@@ -297,6 +320,8 @@ MessageText.prototype.createMessageObject = function(name, content, type, interv
         Name: name || "",
         Content: content || "",
         Type: type || this.Type.Text,
+        StartCallback: valueOrDefault(intervalOptions, "StartCallback", this.emptyFunction),
+        FinishCallback: valueOrDefault(intervalOptions, "FinishCallback", this.emptyFunction),
         CharacterInterval: valueOrDefault(intervalOptions, "CharacterInterval", this.getCharacterInterval()),
         RandomizeCharacterIntervalOn: valueOrDefault(intervalOptions, "RandomizeCharacterIntervalOn", this.isRandomizeCharacterIntervalOn()),
         MessageInterval: valueOrDefault(intervalOptions, "MessageInterval", this.getMessageInterval()),
@@ -386,4 +411,68 @@ MessageText.prototype.setIDPrefix = function(prefix) {
 
 MessageText.prototype.getIDPrefix = function() {
     return this.IDPrefix;
+}
+
+MessageText.prototype.remove = function (array, element) {
+    const index = array.indexOf(element);
+    if(index != -1) {
+        array.splice(index, 1);
+    }
+}
+
+MessageText.prototype.exists = function(array, element) {
+    const index = array.indexOf(element);
+    return index != -1;
+}
+
+MessageText.prototype.addPortraitClass = function(cssClass) {
+    this.PortraitClasses.push(cssClass);
+}
+
+MessageText.prototype.removePortraitClass = function(cssClass) {
+    this.remove(this.PortraitClasses, cssClass);
+}
+
+MessageText.prototype.isPortraitClass = function(cssClass) {
+    return this.exists(this.PortraitClasses, cssClass);
+}
+
+MessageText.prototype.addSpeakerClasses = function(cssClass) {
+    this.SpeakerClasses.push(cssClass);
+}
+
+MessageText.prototype.removeSpeakerClasses = function(cssClass) {
+    this.remove(this.SpeakerClasses, cssClass);
+}
+
+MessageText.prototype.isSpeakerClasses = function(cssClass) {
+    return this.exists(this.SpeakerClasses, cssClass);
+}
+
+MessageText.prototype.addMessageDivClasses = function(cssClass) {
+    this.MessageDivClasses.push(cssClass);
+}
+
+MessageText.prototype.removeMessageDivClasses = function(cssClass) {
+    this.remove(this.MessageDivClasses, cssClass);
+}
+
+MessageText.prototype.isMessageDivClasses = function(cssClass) {
+    return this.exists(this.MessageDivClasses, cssClass);
+}
+
+MessageText.prototype.addImageClasses = function(cssClass) {
+    this.MessageDivClasses.push(cssClass);
+}
+
+MessageText.prototype.removeImageClasses = function(cssClass) {
+    this.remove(this.ImageClasses, cssClass);
+}
+
+MessageText.prototype.isImageClasses = function(cssClass) {
+    return this.exists(this.ImageClasses, cssClass);
+}
+
+MessageText.prototype.emptyFunction = function(arg) {
+
 }
