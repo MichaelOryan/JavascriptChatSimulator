@@ -3,8 +3,6 @@ function MessageText(Options) {
     this.Target = this.valueOrDefault(Options, "Target", "");
     this.Type = {Text: 0, Image: 1};
     this.Portraits = this.valueOrDefault(Options, "Portraits", {}); // May not be supported in future
-    this.LastSpeaker = ""; //this.valueOrDefault(Options, "LastSpeaker", "");
-    this.OldestMessageIndex = 0;
     this.PortraitClasses = this.valueOrDefault(Options, "PortraitClasses", ["message-portrait", "img-circle"]);
     this.SpeakerClasses = this.valueOrDefault(Options, "SpeakerClasses", ["message-name"]);
     this.MessageDivClasses = this.valueOrDefault(Options, "MessageDivClasses", ["message-div", "well", "col-lg-12"]);
@@ -15,6 +13,7 @@ function MessageText(Options) {
     this.RandomizeCharacterInterval = this.valueOrDefault(Options, "RandomizeCharacterInterval", true);
     this.RandomizeMessageInterval = this.valueOrDefault(Options, "RandomizeMessageInterval", true);
     this.NewDivForEachMessage = this.valueOrDefault(Options, "NewDivForEachMessage", true);
+    this.IDPrefix = this.valueOrDefault(Options, "IDPrefix", "MessageText_");
 }
 
 MessageText.prototype.start = function(callback) {
@@ -25,7 +24,8 @@ MessageText.prototype.start = function(callback) {
         contentIndex: 0,
         allMessages: this.Messages,
         messageIndex: 0,
-        callback: callback
+        callback: callback,
+        oldestMessageIndex: 0
     };
     this.showText(Messages);
 }
@@ -33,8 +33,8 @@ MessageText.prototype.start = function(callback) {
 // To append a message to be sent
 // Proper way of populating messages in class. Other ways may not be future supported
 // In future may store messages differently
-MessageText.prototype.addMessage = function(name, message, type) {
-    this.Messages.push(this.createMessageObject(name, message, type));
+MessageText.prototype.addMessage = function(name, message, type, intervalOptions) {
+    this.Messages.push(this.createMessageObject(name, message, type, intervalOptions));
 }
 
 MessageText.prototype.popMessages = function() {
@@ -45,6 +45,7 @@ MessageText.prototype.isEmptyMessages = function() {
     return this.Messages.length == 0;
 }
 
+// Pop front of Messages
 MessageText.prototype.shiftMessages = function() {
     return this.Messages.shift();
 }
@@ -53,8 +54,9 @@ MessageText.prototype.shiftMessages = function() {
 // Set a portrait for a name
 // Proper way of populating portraits in class. Other ways may not be future supported
 // In future may store protraits differently
+// Eg; names that cannot be used as a key in an object
 MessageText.prototype.addPortrait = function(name, url) {
-    this.Portraits[name] = url;
+    this.Portraits[name] = url || "";
 }
 
 MessageText.prototype.removePortait = function(name) {
@@ -86,14 +88,17 @@ MessageText.prototype.newSpeaker = function(target, name) {
     $(target).append("<p/>");
 }
 
-MessageText.prototype.isOverflow = function(container, messageIndex) {
-    return this.IsRemoveTopOverflow && this.hasScrollBar(container) && this.OldestMessageIndex < messageIndex;
+MessageText.prototype.isOverflow = function(Messages) {
+    var container = Messages.container;
+    var messsageIndex = Messages.messageIndex;
+    var oldestMessageIndex = Messages.oldestMessageIndex;
+    return this.IsRemoveTopOverflow && this.hasScrollBar(container) && oldestMessageIndex < messageIndex;
 }
 
-MessageText.prototype.removeTopOverflow = function(container, messageIndex) {
-    while(this.isOverflow(container, messageIndex)) {
-        $("#" + this.OldestMessageIndex).remove();
-        this.OldestMessageIndex++;
+MessageText.prototype.removeTopOverflow = function(Messages) {
+    while(this.isOverflow(Messages)) {
+        $("#" + Messages.oldestMessageIndex).remove();
+        Messages.oldestMessageIndex++;
     }
 }
 
@@ -115,12 +120,17 @@ MessageText.prototype.isnewSpeaker = function(Messages){
 
 }
 
-MessageText.prototype.newMessageDiv = function(container, currentMessage, messageIndex) {
-    var tag = this.makeMessageDivTag("" + messageIndex);
+MessageText.prototype.newMessageDiv = function(Messages) {
+    var container = Messages.container;
+    var currentMessage = Messages.currentMessage;
+    var messageIndex = Messages.messageIndex;
+    var id = this.makeID(messageIndex);
+    console.log(id);
+    var tag = this.makeMessageDivTag(id);
     $(container).append(tag);
-    targetDiv = "#" + messageIndex;
-    this.newSpeaker(targetDiv, currentMessage["Name"]);
-    return "#" + messageIndex;
+    targetDiv = "#" + id;
+    this.newSpeaker(targetDiv, Messages.currentMessage["Name"]);
+    return targetDiv;
 }
 
 MessageText.prototype.appendMessage = function(Messages) {
@@ -149,7 +159,7 @@ MessageText.prototype.onNewSpeakerNewDiv = function(Messages){
     var target = Messages.targetDiv;
 
     if(this.isnewSpeaker(Messages)) {
-        target = this.newMessageDiv(container, currentMessage, messageIndex);
+        target = this.newMessageDiv(Messages);
     }
 
     return target;
@@ -175,7 +185,7 @@ MessageText.prototype.characterDelay = function () {
 //MessageText.prototype.showText = function (container, targetDiv, currentMessage, contentIndex, interval, allMessages, messageIndex) {
 MessageText.prototype.showText = function (Messages) {
     var that = this;
-    this.removeTopOverflow(Messages.container, Messages.messageIndex);
+    this.removeTopOverflow(Messages);
     
     if (Messages.contentIndex < Messages.currentMessage["Content"].length) {
         Messages.targetDiv = this.onNewSpeakerNewDiv(Messages);
@@ -281,8 +291,17 @@ function hasScroll(target) {
     return $(target).prop('scrollHeight') > $(target).prop('clientHeight');
 }
 
-MessageText.prototype.createMessageObject = function(name, content, type) {
-    return {Name: name, Content: content, Type: type};
+MessageText.prototype.createMessageObject = function(name, content, type, intervalOptions) {
+    intervalOptions = intervalOptions || {};
+    return {
+        Name: name || "",
+        Content: content || "",
+        Type: type || this.Type.Text,
+        CharacterInterval: valueOrDefault(intervalOptions, "CharacterInterval", this.getCharacterInterval()),
+        RandomizeCharacterIntervalOn: valueOrDefault(intervalOptions, "RandomizeCharacterIntervalOn", this.isRandomizeCharacterIntervalOn()),
+        MessageInterval: valueOrDefault(intervalOptions, "MessageInterval", this.getMessageInterval()),
+        RandomizeMessageInterval: valueOrDefault(intervalOptions, "RandomizeMessageIntervalOn", this.isRandomizeMessageIntervalOn())
+    };
 }
 
 MessageText.prototype.setTarget = function(targetId) {
@@ -355,4 +374,16 @@ MessageText.prototype.setNewDivForEachMessageOff = function() {
 
 MessageText.prototype.isNewDivForEachMessageOn = function() {
     return this.NewDivForEachMessage;
+}
+
+MessageText.prototype.makeID = function(messageIndex) {
+    return "" + this.IDPrefix + messageIndex;
+}
+
+MessageText.prototype.setIDPrefix = function(prefix) {
+    this.IDPrefix = prefix || "";
+}
+
+MessageText.prototype.getIDPrefix = function() {
+    return this.IDPrefix;
 }
