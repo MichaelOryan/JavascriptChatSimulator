@@ -3,7 +3,7 @@ function MessageText(Options) {
     this.Target = this.valueOrDefault(Options, "Target", "");
     this.Type = {Text: 0, Image: 1};
     this.Portraits = this.valueOrDefault(Options, "Portraits", {}); // May not be supported in future
-    this.LastSpeaker = this.valueOrDefault(Options, "LastSpeaker", "");
+    this.LastSpeaker = ""; //this.valueOrDefault(Options, "LastSpeaker", "");
     this.OldestMessageIndex = 0;
     this.PortraitClasses = this.valueOrDefault(Options, "PortraitClasses", ["message-portrait", "img-circle"]);
     this.SpeakerClasses = this.valueOrDefault(Options, "SpeakerClasses", ["message-name"]);
