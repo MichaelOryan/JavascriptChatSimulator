@@ -1,3 +1,82 @@
+function MessageText(Options) {
+    this.Messages = this.valueOrDefault(Options, "Messages", []); // May not be supported in future
+    this.Target = this.valueOrDefault(Options, "Target", "");
+    this.Type = {Text: 0, Image: 1};
+    this.Portraits = this.valueOrDefault(Options, "Portraits", {}); // May not be supported in future
+    this.LastSpeaker = this.valueOrDefault(Options, "LastSpeaker", "");
+    this.OldestMessageIndex = 0;
+    this.PortraitClasses = this.valueOrDefault(Options, "PortraitClasses", ["message-portrait", "img-circle"]);
+    this.SpeakerClasses = this.valueOrDefault(Options, "SpeakerClasses", ["message-name"]);
+    this.MessageDivClasses = this.valueOrDefault(Options, "MessageDivClasses", ["message-div", "well", "col-lg-12"]);
+    this.ImageClasses = this.valueOrDefault(Options, "ImageClasses", ["message-image"]);
+    this.IsRemoveTopOverflow = this.valueOrDefault(Options, "IsRemoveTopOverflow", false);
+    this.CharacterInterval = this.valueOrDefault(Options, "CharacterInterval", 100);
+    this.MessageInterval = this.valueOrDefault(Options, "CharacterInterval", this.CharacterInterval * 50);
+    this.RandomizeCharacterInterval = this.valueOrDefault(Options, "RandomizeCharacterInterval", true);
+    this.RandomizeMessageInterval = this.valueOrDefault(Options, "RandomizeMessageInterval", true);
+    this.NewDivForEachMessage = this.valueOrDefault(Options, "NewDivForEachMessage", true);
+}
+
+MessageText.prototype.start = function(callback) {
+    var Messages = {
+        container: this.Target,
+        targetDiv: 0,
+        currentMessage: this.Messages[0],
+        contentIndex: 0,
+        allMessages: this.Messages,
+        messageIndex: 0,
+        callback: callback
+    };
+    this.showText(Messages);
+}
+
+// To append a message to be sent
+// Proper way of populating messages in class. Other ways may not be future supported
+// In future may store messages differently
+MessageText.prototype.addMessage = function(name, message, type) {
+    this.Messages.push(this.createMessageObject(name, message, type));
+}
+
+MessageText.prototype.popMessages = function() {
+    return this.Messages.pop();
+}
+
+MessageText.prototype.isEmptyMessages = function() {
+    return this.Messages.length == 0;
+}
+
+MessageText.prototype.shiftMessages = function() {
+    return this.Messages.shift();
+}
+
+
+// Set a portrait for a name
+// Proper way of populating portraits in class. Other ways may not be future supported
+// In future may store protraits differently
+MessageText.prototype.addPortrait = function(name, url) {
+    this.Portraits[name] = url;
+}
+
+MessageText.prototype.removePortait = function(name) {
+    const index = this.Portraits.indexOf(name);
+    if(index != -1) {
+        this.Portraits.splice(index, 1);
+        return true;
+    } else {
+        return false;
+    }
+
+}
+
+// May not be supported in future
+MessageText.prototype.replacePortraits = function(portraits) {
+    this.Portraits = portraits;
+}
+// May not be supported in future
+MessageText.prototype.replaceMessages = function(messages) {
+    this.Messages = messages
+}
+
 MessageText.prototype.newSpeaker = function(target, name) {
     
     var content = this.makePortraitTag(name) + name;
@@ -194,25 +273,6 @@ MessageText.prototype.valueOrDefault = function(dictionary, objectKey, defaultVa
     }
 }
 
-function MessageText(Options) {
-    this.Messages = this.valueOrDefault(Options, "Messages", {});
-    this.Target = this.valueOrDefault(Options, "Target", "");
-    this.Type = {Text: 0, Image: 1};
-    this.Portraits = this.valueOrDefault(Options, "Portraits", {});
-    this.LastSpeaker = this.valueOrDefault(Options, "LastSpeaker", "");
-    this.OldestMessageIndex = 0;
-    this.PortraitClasses = this.valueOrDefault(Options, "PortraitClasses", ["message-portrait", "img-circle"]);
-    this.SpeakerClasses = this.valueOrDefault(Options, "SpeakerClasses", ["message-name"]);
-    this.MessageDivClasses = this.valueOrDefault(Options, "MessageDivClasses", ["well", "col-lg-12"]);
-    this.ImageClasses = this.valueOrDefault(Options, "ImageClasses", ["message-image"]);
-    this.IsRemoveTopOverflow = this.valueOrDefault(Options, "IsRemoveTopOverflow", false);
-    this.CharacterInterval = this.valueOrDefault(Options, "CharacterInterval", 100);
-    this.MessageInterval = this.valueOrDefault(Options, "CharacterInterval", this.CharacterInterval * 50);
-    this.RandomizeCharacterInterval = this.valueOrDefault(Options, "RandomizeCharacterInterval", true);
-    this.RandomizeMessageInterval = this.valueOrDefault(Options, "RandomizeMessageInterval", true);
-    this.NewDivForEachMessage = this.valueOrDefault(Options, "NewDivForEachMessage", true);
-}
-
 MessageText.prototype.hasScrollBar = function(target) {
     return $(target).prop('scrollHeight') > $(target).prop('clientHeight');
 }
@@ -225,31 +285,74 @@ MessageText.prototype.createMessageObject = function(name, content, type) {
     return {Name: name, Content: content, Type: type};
 }
 
-MessageText.prototype.addMessage = function(name, message, type) {
-    this.Messages.push(this.createMessageObject(name, message, type));
+MessageText.prototype.setTarget = function(targetId) {
+    this.Target = targetId;
 }
 
-MessageText.prototype.start = function(callback) {
-    var Messages = {
-        container: this.Target,
-        targetDiv: 0,
-        currentMessage: this.Messages[0],
-        contentIndex: 0,
-        allMessages: this.Messages,
-        messageIndex: 0,
-        callback: callback
-    };
-    this.showText(Messages);
+MessageText.prototype.getTarget = function() {
+    return this.Target;
 }
 
-MessageText.prototype.addPortrait = function(name, url) {
-    this.Portraits[name] = url;
+MessageText.prototype.setRemoveTopOverflowOn = function() {
+    this.IsRemoveTopOverflow = true;
 }
 
-MessageText.prototype.replacePortraits = function(portraits) {
-    this.Portraits = portraits;
+MessageText.prototype.setRemoveTopOverflowOff = function() {
+    this.IsRemoveTopOverflow = false;
 }
 
-MessageText.prototype.replaceMessages = function(messages) {
-    this.Messages = messages
+MessageText.prototype.isRemoveTopOverflowOn = function() {
+    return this.IsRemoveTopOverflow;
+}
+
+MessageText.prototype.setCharacterInterval = function(ms) {
+    this.CharacterInterval = ms;
+}
+
+MessageText.prototype.getCharacterInterval = function(ms) {
+    return this.CharacterInterval;
+}
+
+MessageText.prototype.setMessageInterval = function(ms) {
+    this.MessageInterval = ms;
+}
+
+MessageText.prototype.getMessageInterval = function() {
+    return this.MessageInterval;
+}
+
+MessageText.prototype.setRandomizeCharacterIntervalOn = function() {
+    this.RandomizeCharacterInterval = true;
+}
+
+MessageText.prototype.setRandomizeCharacterIntervalOff = function() {
+    this.RandomizeCharacterInterval = false;
+}
+
+MessageText.prototype.isRandomizeCharacterIntervalOn = function() {
+    return this.RandomizeCharacterInterval;
+}
+
+MessageText.prototype.setRandomizeMessageIntervalOn = function() {
+    this.RandomizeMessageInterval = true;
+}
+
+MessageText.prototype.setRandomizeMessageIntervalOff = function() {
+    this.RandomizeMessageInterval = false;
+}
+
+MessageText.prototype.isRandomizeMessageIntervalOn = function() {
+    return this.RandomizeMessageInterval;
+}
+
+MessageText.prototype.setNewDivForEachMessageOn = function() {
+    this.NewDivForEachMessage = true;
+}
+
+MessageText.prototype.setNewDivForEachMessageOff = function() {
+    this.NewDivForEachMessage = false;
+}
+
+MessageText.prototype.isNewDivForEachMessageOn = function() {
+    return this.NewDivForEachMessage;
 }
