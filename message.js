@@ -156,20 +156,19 @@ MessageText.prototype.appendMessage = function(Messages) {
     return contentIndex;
 }
 
-MessageText.doStartCallback = function(Messages) {
+MessageText.prototype.doStartCallback = function(target, Messages) {
     var message = Messages.currentMessage;
-    var target = Messages.targetDiv;
     message.StartCallback({
         target: target,
         message: Object.assign({}, message)
     });
 }
 
-MessageText.doFinishCallback = function(Messages) {
+MessageText.prototype.doFinishCallback = function(Messages) {
     var messageIndex = Messages.messageIndex;
     if(messageIndex > 0) {
         var lastMessage = Messages.allMessages[messageIndex - 1];
-        lastMessage.StartCallback({
+        lastMessage.FinishCallback({
             target: Messages.targetDiv,
             message: Object.assign({}, lastMessage)
         });
@@ -186,9 +185,9 @@ MessageText.prototype.onNewSpeakerNewDiv = function(Messages){
     var target = Messages.targetDiv;
 
     if(this.isnewSpeaker(Messages)) {
-        doFinishCallback(Messages);
+        this.doFinishCallback(Messages);
         target = this.newMessageDiv(Messages);
-        doStartCallback(Messages);
+        this.doStartCallback(target, Messages);
     }
 
     return target;
@@ -326,16 +325,16 @@ MessageText.prototype.createMessageObject = function(name, content, type, option
         Name: name || "",
         Content: content || "",
         Type: type || this.Type.Text,
-        StartCallback: valueOrDefault(options, "StartCallback", this.emptyFunction),
-        FinishCallback: valueOrDefault(options, "FinishCallback", this.emptyFunction),
-        CharacterInterval: valueOrDefault(options, "CharacterInterval", this.getCharacterInterval()),
-        RandomizeCharacterIntervalOn: valueOrDefault(options, "RandomizeCharacterIntervalOn", this.isRandomizeCharacterIntervalOn()),
-        MessageInterval: valueOrDefault(options, "MessageInterval", this.getMessageInterval()),
-        RandomizeMessageInterval: valueOrDefault(options, "RandomizeMessageIntervalOn", this.isRandomizeMessageIntervalOn()),
-        DivClasses: valueOrDefault(options, "DivClasses", []),
-        ImageClasses: valueOrDefault(options, "ImageClasses", []),
-        PortraitClasses: valueOrDefault(options, "PortraitClasses", []),
-        NameClasses: valueOrDefault(options, "NameClasses", [])
+        StartCallback: this.valueOrDefault(options, "StartCallback", this.emptyFunction),
+        FinishCallback: this.valueOrDefault(options, "FinishCallback", this.emptyFunction),
+        CharacterInterval: this.valueOrDefault(options, "CharacterInterval", this.getCharacterInterval()),
+        RandomizeCharacterIntervalOn: this.valueOrDefault(options, "RandomizeCharacterIntervalOn", this.isRandomizeCharacterIntervalOn()),
+        MessageInterval: this.valueOrDefault(options, "MessageInterval", this.getMessageInterval()),
+        RandomizeMessageInterval: this.valueOrDefault(options, "RandomizeMessageIntervalOn", this.isRandomizeMessageIntervalOn()),
+        DivClasses: this.valueOrDefault(options, "DivClasses", []),
+        ImageClasses: this.valueOrDefault(options, "ImageClasses", []),
+        PortraitClasses: this.valueOrDefault(options, "PortraitClasses", []),
+        NameClasses: this.valueOrDefault(options, "NameClasses", [])
     };
 }
 
